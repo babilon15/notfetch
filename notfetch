@@ -1,0 +1,81 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+from datetime import date
+import os, subprocess
+
+ALPHANUMERIC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+SPEC_CHARS = '+-!?%#&@$}{><'
+
+def binary_prefix(byte):
+	pass
+
+def gen_passwd(length=10):
+	pass
+
+def get_hostname():
+	try:
+		fo = open('/etc/hostname')
+		return fo.readline().rstrip()
+	except FileNotFoundError:
+		return '(unknown)'
+	finally:
+		fo.close()
+
+def get_os_pretty_name():
+	try:
+		fo = open('/etc/os-release')
+	except FileNotFoundError:
+		return '(unknown)'
+	exists = False
+	for line in fo:
+		if 'PRETTY_NAME' in line:
+			exists = True
+			break
+	fo.close()
+	if exists:
+		first_qmark = line.find('"')
+		last_qmark = line.rfind('"')
+		return line[first_qmark+1:last_qmark]
+	return '(unknown)'
+
+def get_linux_version():
+	out = subprocess.check_output(['uname', '-r'])
+	out = out.decode('utf-8')
+	return out.rstrip()
+
+def get_shell_name():
+	pass
+
+def get_tty_dev():
+	out = subprocess.check_output(['tty'])
+	out = out.decode('utf-8')
+	return out.rstrip()
+
+def get_real_users():
+	pass
+
+def get_cpu_name():
+	pass
+
+def get_total_ram():
+	pass
+
+def get_total_storage():
+	pass
+
+def get_current_date():
+	pass
+
+if __name__ == '__main__':
+	print('  Hostname: {}'.format(get_hostname()))
+	print('    Distro: {}'.format(get_os_pretty_name()))
+	print('    Kernel: {}'.format(get_linux_version()))
+	print('     Shell: {}')
+	print('     Term.: {} [{}]'.format(os.environ['TERM'], get_tty_dev()))
+	print('     Users: {}')
+	print('       CPU: {}')
+	print('       RAM: {} [Used: 54 %]')
+	print('T. storage: {}')
+	print('    Rpassw: {}')
+	print('      DATE: {}\n')
