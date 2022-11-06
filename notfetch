@@ -5,9 +5,11 @@ import subprocess, os
 
 ### CONF ###
 
+empty_rows_n = 1
+
 mountpoints = [
-	"/boot",
-	"/"
+	'/',
+	'/boot'
 ]
 
 row_format = "{leader_spaces}\033[1m{name}\033[0m  {value}"
@@ -69,6 +71,8 @@ else:
 # Default editor:
 try:
 	edit = os.environ['EDITOR']
+	if edit == '':
+		edit = '-'
 except:
 	pass
 else:
@@ -92,6 +96,7 @@ else:
 
 # Normal users:
 try:
+	current_user = os.environ['USER']
 	file_object = open('/etc/passwd')
 	users_list = []
 	for line in file_object:
@@ -103,10 +108,12 @@ try:
 	index = 0
 	last_index = len(users_list) - 1
 	for username in users_list:
+		if current_user == username:
+			username = '\033[1m' + username + '\033[0m'
 		if index == last_index:
 			users += username
-		else:
-			users += username + ', '
+			break
+		users += username + ', '
 		index += 1
 except:
 	pass
@@ -136,13 +143,32 @@ except:
 	pass
 else:
 	# RAM usage:
-	names.append('RAM')
+	names.append('RAM used')
 	values.append(ram_usage)
 	# Swap usage:
-	names.append('swap')
+	names.append('swap u.')
 	values.append(swap_usage)
 finally:
 	file_object.close()
+
+# Partitions (mountpoints):
+try:
+	mp_list = []
+	for mp in mountpoints:
+		if os.path.ismount(mp):
+			svfs = os.statvfs(mp)
+			total = svfs.f_blocks * svfs.f_frsize
+			avb_root = svfs.f_bfree * svfs.f_frsize
+			avb_user = svfs.f_bavail * svfs.f_frsize
+			used = total - avb_root
+			total_user = used + avb_user
+			mp_list.append( {'mp_path': mp, 'usage_p': round((used / total_user) * 100)} )
+except:
+	pass
+else:
+	for elem in mp_list:
+		names.append('`' + elem['mp_path'] + '` u.')
+		values.append(str(elem['usage_p']) + ' %')
 
 # Generate:
 longest_n = -1
@@ -158,3 +184,5 @@ for name, value in zip(names, values):
 		name=name,
 		value=value
 	))
+
+print(empty_rows_n * '\n', end='')
