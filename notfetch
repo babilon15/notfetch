@@ -5,20 +5,32 @@ import subprocess, os
 
 ### CONF ###
 
-empty_rows_n = 1 # integer!
+empty_rows_n = 2
 
 mountpoints = [
 	'/',
 	'/boot'
 ]
 
-row_format = "{leader_spaces}\033[1m{name}\033[0m  {value}"
-#row_format = "\033[1m{name}\033[0m{leader_spaces}  {value}"
+if 'NOTFETCH_MOUNTPOINTS' in os.environ:
+	ev_elements = os.environ['NOTFETCH_MOUNTPOINTS'].split(':')
+	for mtp in ev_elements:
+		if mtp != '':
+			mountpoints.append(mtp.strip())
+
+row_format = '{leader_spaces}\033[1m{name}\033[0m  {value}'
 
 ### PROGRAM ###
 
 names = []
 values = []
+
+# Friendly name (The everyday name of a hardware device, displayed to the user instead of the internal or technical designation.):
+if 'NOTFETCH_FRIENDLY_NAME' in os.environ:
+	friendly_name = os.environ['NOTFETCH_FRIENDLY_NAME']
+	if friendly_name != '':
+		names.append('machine')
+		values.append(friendly_name)
 
 # Hostname:
 try:
@@ -154,8 +166,9 @@ finally:
 
 # Partitions (mountpoints):
 try:
+	mp_alte = list(dict.fromkeys(mountpoints))
 	mp_list = []
-	for mp in mountpoints:
+	for mp in mp_alte:
 		if os.path.ismount(mp):
 			svfs = os.statvfs(mp)
 			total = svfs.f_blocks * svfs.f_frsize
