@@ -5,7 +5,7 @@ import subprocess, os
 
 ### CONF ###
 
-empty_rows_n = 1
+empty_rows_n = 1 # integer!
 
 mountpoints = [
 	'/',
@@ -13,6 +13,7 @@ mountpoints = [
 ]
 
 row_format = "{leader_spaces}\033[1m{name}\033[0m  {value}"
+#row_format = "\033[1m{name}\033[0m{leader_spaces}  {value}"
 
 ### PROGRAM ###
 
@@ -68,7 +69,7 @@ else:
 	names.append('shell')
 	values.append(shell_name)
 
-# Default editor:
+# ~ Default editor:
 try:
 	edit = os.environ['EDITOR']
 	if edit == '':
