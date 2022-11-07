@@ -3,7 +3,7 @@
 
 # notfetch (2022)
 
-import subprocess, os
+import subprocess, os, time
 
 ### CONF ###
 
@@ -229,6 +229,43 @@ finally:
 	file_object.close()
 
 # Scheduled shutdown (or reboot):
+try:
+	file_object = open('/run/systemd/shutdown/scheduled')
+	for line in file_object:
+		if 'USEC' in line:
+			usec_val = int( line[ line.find('=')+1 : ].rstrip() )
+		if 'MODE' in line:
+			mode_val = line[ line.find('=')+1 : ].rstrip()
+	usec_sec = round(usec_val / 1000000)
+	period = usec_sec - round(time.time())
+	period_f = ''
+	hours = period // 3600
+	remd = period % 3600
+	minutes = remd // 60
+	remd %= 60
+	seconds = remd
+	hours_r = round(hours)
+	minutes_r = round(minutes)
+	seconds_r = round(seconds)
+	if hours_r != 0:
+		period_f += str(hours_r) + 'h '
+	if minutes_r != 0:
+		period_f += str(minutes_r) + 'm '
+	if hours_r == 0 and minutes_r == 0:
+		period_f += str(seconds_r) + 's'
+	period_f = period_f.rstrip()
+	name = 'scheduled'
+	if mode_val == 'poweroff':
+		name += ' shutdown'
+	if mode_val == 'reboot':
+		name += ' reboot'
+except:
+	pass
+else:
+	names.append(name)
+	values.append(period_f)
+finally:
+	file_object.close()
 
 # Generate:
 
