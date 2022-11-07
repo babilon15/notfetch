@@ -1,290 +1,37 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-# notfetch (2022)
+import subprocess
+import time
+import os
 
-import subprocess, os, time
+## CONFIGURATION ##
+possible_mountpoints = ['/','/boot','/root','/home']
+before_empty_lines = 0
+after_empty_lines = 2
+lines_format = '{leader_spaces}\033[1m{desc}\033[0m  {value}'
 
-### CONF ###
-
-empty_rows_before_n = 0
-
-empty_rows_n = 2
-
-mountpoints = [
-	'/',
-	'/boot',
-	'/root',
-	'/home'
-]
-
-if 'NOTFETCH_MOUNTPOINTS' in os.environ:
-	ev_elements = os.environ['NOTFETCH_MOUNTPOINTS'].split(':')
-	for mtp in ev_elements:
-		if mtp != '':
-			mountpoints.append(mtp.strip())
-
-row_format = '{leader_spaces}\033[1m{name}\033[0m  {value}'
-
-### PROGRAM ###
-
-names = []
-values = []
-
-# Friendly name: <-- The everyday name of a hardware device, displayed to the user instead of the internal or technical designation.
-if 'NOTFETCH_FRIENDLY_NAME' in os.environ:
-	friendly_name = os.environ['NOTFETCH_FRIENDLY_NAME']
-	if friendly_name != '':
-		names.append('machine')
-		values.append(friendly_name)
-
-# Hostname:
+# Environment variables:
 try:
-	file_object = open('/etc/hostname')
-	hn_val = file_object.readline()
-	hn_val = hn_val.rstrip()
-except:
-	pass
-else:
-	names.append('hostname')
-	values.append(hn_val)
-finally:
-	file_object.close()
+	friendly_name = os.environ['NOTF_FRIENDLY_NAME']
+except KeyError:
+	friendly_name = ''
 
-# Distro name:
 try:
-	file_object = open('/etc/os-release')
-	for line in file_object:
-		if 'PRETTY_NAME' in line:
-			break
-	pretty_name = line[ line.find('"') + 1 : line.rfind('"') ]
-except:
+	part_mountpoints = os.environ['NOTF_MOUNTPOINTS'] # for example: "/:/boot:/home"
+except KeyError:
+	part_mountpoints = ''
+
+## FUNCTIONS ##
+
+def binary_prefix(b, bit=False, dec_prefix=False):
 	pass
-else:
-	names.append('distro')
-	values.append(pretty_name)
-finally:
-	file_object.close()
 
-# Linux version:
-try:
-	out = subprocess.check_output( ['uname', '-r'] )
-	ver = out.decode('utf-8')
-	ver = ver.rstrip()
-except:
+def format_percent(n, digits=0, term_color=False): # n <-- float(0.43)
 	pass
-else:
-	names.append('kernel')
-	values.append(ver)
 
-# Shell:
-try:
-	shell_path = os.environ['SHELL']
-	shell_name = shell_path[ shell_path.rfind('/') + 1 : ]
-except:
+def kilo_to_byte(n):
 	pass
-else:
-	names.append('shell')
-	values.append(shell_name)
 
-# Default editor:
-try:
-	editor = os.environ['EDITOR']
-	if editor == '':
-		editor = '-'
-except:
+def sec_to_dhms(n, short=True):
 	pass
-else:
-	names.append('editor')
-	values.append(editor)
-
-# Terminal + device:
-try:
-	term = os.environ['TERM']
-	if term == 'linux':
-		term = 'console'
-	out = subprocess.check_output( ['tty'] )
-	tty = out.decode('utf-8')
-	tty = tty.rstrip()
-	out = subprocess.check_output( ['tput', 'cols', 'lines'] )
-	out = out.decode('utf-8')
-	tsl = out.split('\n')
-	size = tsl[0] + 'x' + tsl[1]
-	term_dev = term + ', ' + size + ', `' + tty + '`'
-except:
-	pass
-else:
-	names.append('terminal')
-	values.append(term_dev)
-
-# Normal users:
-try:
-	current_user = os.environ['USER']
-	file_object = open('/etc/passwd')
-	users_list = []
-	for line in file_object:
-		line_list = line.split(':')
-		if len(line_list) == 7:
-			if int(line_list[2]) >= 1000 and 'nologin' not in line_list[6]:
-				users_list.append(line_list[0])
-	users = ''
-	index = 0
-	last_index = len(users_list) - 1
-	for username in users_list:
-		if current_user == username:
-			username = '\033[1m' + username + '\033[0m'
-		if index == last_index:
-			users += username
-			break
-		users += username + ', '
-		index += 1
-except:
-	pass
-else:
-	names.append('users')
-	values.append(users)
-finally:
-	file_object.close()
-
-# RAM and swap usage (2 row):
-try:
-	file_object = open('/proc/meminfo')
-	for line in file_object:
-		if 'MemTotal' in line:
-			mem_total = int( line[ line.find(':') + 1 : line.rfind('k') ] )
-		if 'MemAvailable' in line:
-			mem_available = int( line[ line.find(':') + 1 : line.rfind('k') ] )
-		if 'SwapTotal' in line:
-			swap_total = int( line[ line.find(':') + 1 : line.rfind('k') ] )
-		if 'SwapFree' in line:
-			swap_free = int( line[ line.find(':') + 1 : line.rfind('k') ] )
-	ram_usage_num = round(((mem_total - mem_available) / mem_total) * 100)
-	swap_usage_num = round(((swap_total - swap_free) / swap_total) * 100)
-	ram_usage = str(ram_usage_num) + '%'
-	swap_usage = str(swap_usage_num) + '%'
-except:
-	pass
-else:
-	# RAM usage:
-	names.append('RAM used')
-	values.append(ram_usage)
-	# Swap usage:
-	names.append('swap u.')
-	values.append(swap_usage)
-finally:
-	file_object.close()
-
-# Partitions (mountpoints):
-try:
-	mp_alte = list(dict.fromkeys(mountpoints))
-	mp_list = []
-	for mp in mp_alte:
-		if os.path.ismount(mp):
-			svfs = os.statvfs(mp)
-			total = svfs.f_blocks * svfs.f_frsize
-			avb_root = svfs.f_bfree * svfs.f_frsize
-			avb_user = svfs.f_bavail * svfs.f_frsize
-			used = total - avb_root
-			total_user = used + avb_user
-			mp_list.append( {'mp_path': mp, 'usage_p': round((used / total_user) * 100)} )
-except:
-	pass
-else:
-	for elem in mp_list:
-		names.append('`' + elem['mp_path'] + '` u.')
-		values.append(str(elem['usage_p']) + '%')
-
-# Uptime:
-try:
-	file_object = open('/proc/uptime')
-	first_line = file_object.readline()
-	upt_sec = float( first_line[ : first_line.find(' ') ] )
-	days = upt_sec // 86400
-	remd = upt_sec % 86400
-	hours = remd // 3600
-	remd %= 3600
-	minutes = remd // 60
-	remd %= 60
-	seconds = remd
-	days_r = round(days)
-	hours_r = round(hours)
-	minutes_r = round(minutes)
-	seconds_r = round(seconds)
-	upt = ''
-	if days_r != 0:
-		upt += str(days_r) + 'd '
-	if hours_r != 0:
-		upt += str(hours_r) + 'h '
-	if minutes_r != 0:
-		upt += str(minutes_r) + 'm '
-	if days_r == 0 and hours_r == 0 and minutes_r == 0:
-		upt += str(seconds_r) + 's'
-	upt = upt.rstrip()
-except:
-	pass
-else:
-	names.append('uptime')
-	values.append(upt)
-finally:
-	file_object.close()
-
-# Scheduled shutdown (or reboot):
-try:
-	file_object = open('/run/systemd/shutdown/scheduled')
-	for line in file_object:
-		if 'USEC' in line:
-			usec_val = float( line[ line.find('=')+1 : ].rstrip() )
-		if 'MODE' in line:
-			mode_val = line[ line.find('=')+1 : ].rstrip()
-	usec_sec = usec_val / 1000000 # microsecond --> second
-	period = usec_sec - time.time()
-	period_f = ''
-	hours = period // 3600
-	remd = period % 3600
-	minutes = remd // 60
-	remd %= 60
-	seconds = remd
-	hours_r = round(hours)
-	minutes_r = round(minutes)
-	seconds_r = round(seconds)
-	if hours_r != 0:
-		period_f += str(hours_r) + 'h '
-	if minutes_r != 0:
-		period_f += str(minutes_r) + 'm '
-	if hours_r == 0 and minutes_r == 0:
-		period_f += str(seconds_r) + 's'
-	period_f = period_f.rstrip()
-	name = 'scheduled'
-	if mode_val == 'poweroff':
-		name += ' shutdown'
-	if mode_val == 'reboot':
-		name += ' reboot'
-except:
-	pass
-else:
-	names.append(name)
-	values.append(period_f)
-finally:
-	file_object.close()
-
-# Generate:
-
-# Empty lines:
-print(empty_rows_before_n * '\n', end='')
-
-longest_n = -1
-for name_b in names:
-	name_b_len = len(name_b)
-	if name_b_len > longest_n:
-		longest_n = name_b_len
-
-for name, value in zip(names, values):
-	spaces_n = longest_n - len(name)
-	print(row_format.format(
-		leader_spaces=spaces_n * " ",
-		name=name,
-		value=value
-	))
-
-# Empty lines:
-print(empty_rows_n * '\n', end='')
