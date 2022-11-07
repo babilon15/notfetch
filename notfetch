@@ -233,11 +233,11 @@ try:
 	file_object = open('/run/systemd/shutdown/scheduled')
 	for line in file_object:
 		if 'USEC' in line:
-			usec_val = int( line[ line.find('=')+1 : ].rstrip() )
+			usec_val = float( line[ line.find('=')+1 : ].rstrip() )
 		if 'MODE' in line:
 			mode_val = line[ line.find('=')+1 : ].rstrip()
-	usec_sec = round(usec_val / 1000000)
-	period = usec_sec - round(time.time())
+	usec_sec = usec_val / 1000000 # microsecond --> second
+	period = usec_sec - time.time()
 	period_f = ''
 	hours = period // 3600
 	remd = period % 3600
