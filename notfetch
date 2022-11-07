@@ -194,6 +194,42 @@ else:
 		names.append('`' + elem['mp_path'] + '` u.')
 		values.append(str(elem['usage_p']) + '%')
 
+# Uptime:
+try:
+	file_object = open('/proc/uptime')
+	first_line = file_object.readline()
+	upt_sec = float( first_line[ : first_line.find(' ') ] )
+	days = upt_sec // 86400
+	remd = upt_sec % 86400
+	hours = remd // 3600
+	remd %= 3600
+	minutes = remd // 60
+	remd %= 60
+	seconds = remd
+	days_r = round(days)
+	hours_r = round(hours)
+	minutes_r = round(minutes)
+	seconds_r = round(seconds)
+	upt = ''
+	if days_r != 0:
+		upt += str(days_r) + 'd '
+	if hours_r != 0:
+		upt += str(hours_r) + 'h '
+	if minutes_r != 0:
+		upt += str(minutes_r) + 'm '
+	if days_r == 0 and hours_r == 0 and minutes_r == 0:
+		upt += str(seconds_r) + 's'
+	upt = upt.rstrip()
+except:
+	pass
+else:
+	names.append('uptime')
+	values.append(upt)
+finally:
+	file_object.close()
+
+# Scheduled shutdown (or reboot):
+
 # Generate:
 
 # Empty lines:
