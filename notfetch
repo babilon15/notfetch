@@ -1,15 +1,20 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+# notfetch (2022)
+
 import subprocess, os
 
 ### CONF ###
+
+empty_rows_before_n = 0
 
 empty_rows_n = 2
 
 mountpoints = [
 	'/',
-	'/boot'
+	'/boot',
+	'/home'
 ]
 
 if 'NOTFETCH_MOUNTPOINTS' in os.environ:
@@ -25,7 +30,7 @@ row_format = '{leader_spaces}\033[1m{name}\033[0m  {value}'
 names = []
 values = []
 
-# Friendly name (The everyday name of a hardware device, displayed to the user instead of the internal or technical designation.):
+# Friendly name: <-- The everyday name of a hardware device, displayed to the user instead of the internal or technical designation.
 if 'NOTFETCH_FRIENDLY_NAME' in os.environ:
 	friendly_name = os.environ['NOTFETCH_FRIENDLY_NAME']
 	if friendly_name != '':
@@ -81,16 +86,16 @@ else:
 	names.append('shell')
 	values.append(shell_name)
 
-# ~ Default editor:
+# Default editor:
 try:
-	edit = os.environ['EDITOR']
-	if edit == '':
-		edit = '-'
+	editor = os.environ['EDITOR']
+	if editor == '':
+		editor = '-'
 except:
 	pass
 else:
 	names.append('editor')
-	values.append(edit)
+	values.append(editor)
 
 # Terminal + device:
 try:
@@ -150,8 +155,8 @@ try:
 			swap_free = int( line[ line.find(':') + 1 : line.rfind('k') ] )
 	ram_usage_num = round(((mem_total - mem_available) / mem_total) * 100)
 	swap_usage_num = round(((swap_total - swap_free) / swap_total) * 100)
-	ram_usage = str(ram_usage_num) + ' %'
-	swap_usage = str(swap_usage_num) + ' %'
+	ram_usage = str(ram_usage_num) + '%'
+	swap_usage = str(swap_usage_num) + '%'
 except:
 	pass
 else:
@@ -182,9 +187,13 @@ except:
 else:
 	for elem in mp_list:
 		names.append('`' + elem['mp_path'] + '` u.')
-		values.append(str(elem['usage_p']) + ' %')
+		values.append(str(elem['usage_p']) + '%')
 
 # Generate:
+
+# Empty lines:
+print(empty_rows_before_n * '\n', end='')
+
 longest_n = -1
 for name_b in names:
 	name_b_len = len(name_b)
@@ -199,4 +208,5 @@ for name, value in zip(names, values):
 		value=value
 	))
 
+# Empty lines:
 print(empty_rows_n * '\n', end='')
