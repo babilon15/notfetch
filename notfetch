@@ -24,14 +24,58 @@ except KeyError:
 
 ## FUNCTIONS ##
 
-def binary_prefix(b, bit=False, dec_prefix=False):
-	pass
+def drop_zeros(string): # '15.0' --> '15'
+	return string.rstrip('0').rstrip('.') if ('.') in string else string
 
-def format_percent(n, digits=0, term_color=False): # n <-- float(0.43)
-	pass
+def binary_prefix(b, digits=2, dec_prefix=False):
+	if dec_prefix:
+		prf_u = ['B','KB','MB','GB','TB','PB','EB','ZB','YB']
+	else:
+		prf_u = ['B','KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB']
+	if (b < 1024): # B
+		return str(b) + ' ' + prf_u[0]
+	elif (b >= 1024 and b < 1048576): # KiB
+		return drop_zeros(str(round(b / 1024, digits))) + ' ' + prf_u[1]
+	elif (b >= 1048576 and b < 1073741824): # MiB
+		return drop_zeros(str(round(b / 1048576, digits))) + ' ' + prf_u[2]
+	elif (b >= 1073741824 and b < 1099511627776): # GiB
+		return drop_zeros(str(round(b / 1073741824, digits))) + ' ' + prf_u[3]
+	elif (b >= 1099511627776 and b < 1125899906842624): # TiB
+		return drop_zeros(str(round(b / 1099511627776, digits))) + ' ' + prf_u[4]
+	elif (b >= 1125899906842624 and b < 1152921504606846976): # PiB
+		return drop_zeros(str(round(b / 1125899906842624, digits))) + ' ' + prf_u[5]
+	elif (b >= 1152921504606846976 and b < 1180591620717411303424): # EiB
+		return drop_zeros(str(round(b / 1152921504606846976, digits))) + ' ' + prf_u[6]
+	elif (b >= 1180591620717411303424 and b < 1208925819614629174706176): # ZiB
+		return drop_zeros(str(round(b / 1180591620717411303424, digits))) + ' ' + prf_u[7]
+	else: # YiB
+		return drop_zeros(str(round(b / 1208925819614629174706176, digits))) + ' ' + prf_u[8]
+
+def format_percent(n, digits=0, term_color=False):
+	# COLORS (8/16):
+	# < 51 ------ green (92)
+	# < 76 ----- yellow (93)
+	# <= 100 ------ red (91)
+	if ((n < 0) or (n > 1)):
+		return False
+	pt = round(n * 100, digits)
+	pt_str = drop_zeros(str(pt))
+	if (term_color):
+		if (pt < 51):
+			pt_str = '\033[92m' + pt_str + '%\033[39m'
+		elif (pt < 76):
+			pt_str = '\033[93m' + pt_str + '%\033[39m'
+		else:
+			pt_str = '\033[91m' + pt_str + '%\033[39m'
+	else:
+		pt_str += '%'
+	return pt_str
 
 def kilo_to_byte(n):
-	pass
+	return n * 1024
 
-def sec_to_dhms(n, short=True):
+def sec_to_dhms(n, short=True, show_sec=False):
+	# long (short=False): 4 day(s), 3 hour(s), 2 minute(s), 1 second(s)
+	# short: 4d 3h 2m 1s
 	pass
+########
