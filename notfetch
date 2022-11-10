@@ -78,4 +78,14 @@ def sec_to_dhms(n, short=True, show_sec=False):
 	# long (short=False): 4 day(s), 3 hour(s), 2 minute(s), 1 second(s)
 	# short: 4d 3h 2m 1s
 	pass
-########
+
+## LINES ##
+
+lines = [] # {'desc': x, 'val': y}
+
+# Friendly name:
+if (friendly_name != ''):
+	lines.append({'desc': 'Machine', 'val': friendly_name})
+
+#####
+print(lines)
