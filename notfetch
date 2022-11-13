@@ -5,6 +5,9 @@ import subprocess
 import time
 import os
 
+HOSTNAME_FILE = '/etc/hostname'
+OS_REL_FILE = '/etc/os-release'
+
 ## CONFIGURATION ##
 possible_mountpoints = ['/','/boot','/root','/home']
 before_empty_lines = 0
@@ -79,13 +82,76 @@ def sec_to_dhms(n, short=True, show_sec=False):
 	# short: 4d 3h 2m 1s
 	pass
 
+def process_kv_file(path):
+	pairs = {}
+	fo = open(path)
+	while True:
+		line = fo.readline()
+		if (not line):
+			break
+		equal_sign_pos = line.find('=')
+		if (equal_sign_pos == -1):
+			continue
+		key = line[:equal_sign_pos].strip()
+		val = line[equal_sign_pos+1:].strip().strip('"')
+		pairs[key] = val
+	fo.close()
+	return pairs
+
 ## LINES ##
 
 lines = [] # {'desc': x, 'val': y}
 
 # Friendly name:
 if (friendly_name != ''):
-	lines.append({'desc': 'Machine', 'val': friendly_name})
+	lines.append({'desc': 'machine', 'val': friendly_name})
 
-#####
-print(lines)
+# Hostname:
+try:
+	fo = open(HOSTNAME_FILE)
+	hostname = fo.readline().rstrip()
+except:
+	pass
+else:
+	lines.append({'desc': 'hostname', 'val': hostname})
+finally:
+	fo.close()
+
+# Distribution:
+try:
+	os_rel = process_kv_file(OS_REL_FILE)
+	pretty_name = os_rel['PRETTY_NAME']
+except:
+	pass
+else:
+	lines.append({'desc': 'distro', 'val': pretty_name})
+
+# Linux version:
+try:
+	out = subprocess.check_output(['uname', '-r'])
+	ver = out.decode('utf-8').rstrip()
+except:
+	pass
+else:
+	lines.append({'desc': 'kernel', 'val': ver})
+
+# Shell:
+
+## GENERATE ##
+
+lines_len = len(lines)
+longest_desc_num = -1
+i = 0
+while (i != lines_len):
+	desc_c_len = len(lines[i]['desc'])
+	if (desc_c_len > longest_desc_num):
+		longest_desc_num = desc_c_len
+	i += 1
+
+i = 0
+while (i != lines_len):
+	c_line = lines[i]
+	spaces_num = longest_desc_num - len(c_line['desc'])
+	print(lines_format.format(leader_spaces=spaces_num * " ", desc=c_line['desc'], value=c_line['val']))
+	i += 1
+##########
